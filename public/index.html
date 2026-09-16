@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriHack-132: Farmer Market Linkage & Price Discovery</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js for reactive UI -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-green-50 font-sans text-gray-800" x-data="agriApp()" @load="initApp()">
+
+    <!-- Navigation Header -->
+    <header class="bg-green-700 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="text-3xl">🌾</span>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight">AgriMarket Link & AI</h1>
+                    <p class="text-xs text-green-200">Hackathon-132 • Price Discovery & Escrow Platform</p>
+                </div>
+            </div>
+            <nav class="hidden md:flex space-x-6 font-semibold">
+                <button @click="currentTab = 'market'" :class="currentTab === 'market' ? 'border-b-2 border-white pb-1' : 'text-green-200 hover:text-white'">Market Intelligence</button>
+                <button @click="currentTab = 'listing'" :class="currentTab === 'listing' ? 'border-b-2 border-white pb-1' : 'text-green-200 hover:text-white'">Smart Listing & AI</button>
+                <button @click="currentTab = 'escrow'" :class="currentTab === 'escrow' ? 'border-b-2 border-white pb-1' : 'text-green-200 hover:text-white'">Escrow & Contracts</button>
+                <button @click="currentTab = 'architecture'" :class="currentTab === 'architecture' ? 'border-b-2 border-white pb-1' : 'text-green-200 hover:text-white'">System Architecture</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-6 py-8">
+
+        <!-- TAB 1: MARKET INTELLIGENCE & PRICE DISCOVERY -->
+        <div x-show="currentTab === 'market'" class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-md border-l-8 border-green-600">
+                <h2 class="text-2xl font-bold text-green-900"><i class="fa-solid fa-chart-line mr-2"></i> Regional Price Discovery & Live Benchmarks</h2>
+                <p class="text-gray-600 mt-1">Real-time local market rates powered by PostgreSQL + Redis cache layer.</p>
+            </div>
+
+            <!-- Crop Selector -->
+            <div class="flex gap-3 overflow-x-auto pb-2">
+                <template x-for="crop in crops">
+                    <button @click="selectedCrop = crop; fetchPrices()" 
+                        :class="selectedCrop === crop ? 'bg-green-600 text-white shadow-md' : 'bg-white text-green-800 border border-green-200 hover:bg-green-100'"
+                        class="px-5 py-3 rounded-xl font-semibold text-lg transition-all" x-text="crop">
+                    </button>
+                </template>
+            </div>
+
+            <!-- Price Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <template x-for="item in prices">
+                    <div class="bg-white p-6 rounded-2xl shadow-md border-t-4 border-green-500 hover:shadow-lg transition-all">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-xl font-bold text-gray-800" x-text="item.crop_name + ' (' + item.grade + ')'"></h3>
+                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-bold" x-text="item.trend"></span>
+                        </div>
+                        <p class="text-gray-500 text-sm mt-2"><i class="fa-solid fa-location-dot mr-1"></i> Region: <span x-text="item.region"></span></p>
+                        <div class="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
+                            <div>
+                                <span class="text-xs text-gray-400 block">Current Benchmark</span>
+                                <span class="text-2xl font-extrabold text-green-700" x-text="'$' + item.price_per_kg + ' / kg'"></span>
+                            </div>
+                            <button @click="quickBuy(item)" class="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow">
+                                Procure
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <!-- AI Advisory Banner -->
+            <div class="bg-amber-50 border border-amber-200 p-6 rounded-2xl shadow-sm flex items-start space-x-4">
+                <div class="text-amber-600 text-3xl"><i class="fa-solid fa-lightbulb"></i></div>
+                <div>
+                    <h4 class="font-bold text-amber-900 text-lg">AI Market Advisory Tip</h4>
+                    <p class="text-amber-800 mt-1">
+                        Based on 7-day weather forecasts and historical logistics data, demand for <span class="font-semibold" x-text="selectedCrop"></span> is projected to rise by 12% ahead of the weekend. Consider listing produce before Wednesday to maximize margins.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: SMART LISTING & AI PRICING ASSISTANT -->
+        <div x-show="currentTab === 'listing'" class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-md border-l-8 border-green-600">
+                <h2 class="text-2xl font-bold text-green-900"><i class="fa-solid fa-wand-magic-sparkles mr-2"></i> Smart Listing & AI Price Validation</h2>
+                <p class="text-gray-600 mt-1">Auto-tagging via image recognition and real-time market fairness check.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Listing Form -->
+                <div class="bg-white p-6 rounded-2xl shadow-md space-y-4">
+                    <h3 class="text-lg font-bold text-gray-800">Farmer Produce Listing Wizard</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Crop Name</label>
+                        <input type="text" x-model="newListing.crop_name" class="mt-1 w-full p-3 border rounded-xl focus:ring-2 focus:ring-green-500" placeholder="e.g. Tomatoes">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Grade</label>
+                            <select x-model="newListing.grade" class="mt-1 w-full p-3 border rounded-xl bg-white">
+                                <option>Grade A (Premium)</option>
+                                <option>Grade B (Standard)</option>
+                                <option>Grade C (Bulk)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Volume (kg)</label>
+                            <input type="number" x-model="newListing.volume" class="mt-1 w-full p-3 border rounded-xl" placeholder="500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Expected Price ($/kg)</label>
+                            <input type="number" step="0.1" x-model="newListing.expected_price" class="mt-1 w-full p-3 border rounded-xl" placeholder="2.50">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Region / Location</label>
+                            <input type="text" x-model="newListing.location" class="mt-1 w-full p-3 border rounded-xl" placeholder="Central Valley">
+                        </div>
+                    </div>
+                    <button @click="submitListing()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-md transition-all">
+                        Publish Listing & Run AI Check
+                    </button>
+                </div>
+
+                <!-- AI Feedback Panel -->
+                <div class="bg-white p-6 rounded-2xl shadow-md flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-800 mb-4"><i class="fa-solid fa-robot text-green-600 mr-2"></i> AI Pricing Engine Feedback</h3>
+                        <div x-show="aiResult" class="space-y-4">
+                            <div class="p-4 bg-green-50 rounded-xl border border-green-200">
+                                <span class="text-xs text-green-700 font-semibold block">Market Average Baseline</span>
+                                <span class="text-2xl font-bold text-green-900" x-text="'$' + (aiResult ? aiResult.market_average : 0) + ' / kg'"></span>
+                            </div>
+                            <div :class="aiResult && aiResult.recommendation.includes('Warning') ? 'bg-amber-50 border-amber-200 text-amber-900' : 'bg-blue-50 border-blue-200 text-blue-900'" class="p-4 rounded-xl border">
+                                <span class="font-bold block mb-1">Recommendation Analysis:</span>
+                                <p x-text="aiResult ? aiResult.recommendation : ''"></p>
+                            </div>
+                        </div>
+                        <div x-show="!aiResult" class="text-center py-12 text-gray-400">
+                            <i class="fa-solid fa-arrow-left text-3xl mb-2 block"></i>
+                            Fill out the form and click publish to get real-time AI price recommendations.
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-400 pt-4 border-t">
+                        <i class="fa-solid fa-shield-halved mr-1"></i> Protected by AgriHack AI Smart Contract Verification
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: ESCROW & SMART CONTRACTS -->
+        <div x-show="currentTab === 'escrow'" class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-md border-l-8 border-green-600">
+                <h2 class="text-2xl font-bold text-green-900"><i class="fa-solid fa-file-contract mr-2"></i> Escrow & Digital Smart Contracts</h2>
+                <p class="text-gray-600 mt-1">Secure milestone-based payment locking and automated blockchain reference generation.</p>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl shadow-md overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b bg-gray-50 text-gray-600 text-sm">
+                            <th class="p-4">Contract ID</th>
+                            <th class="p-4">Listing & Crop</th>
+                            <th class="p-4">Agreed Price</th>
+                            <th class="p-4">Deposit (Escrow)</th>
+                            <th class="p-4">Status</th>
+                            <th class="p-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                        <template x-for="contract in contracts">
+                            <tr>
+                                <td class="p-4 font-mono text-xs text-gray-500" x-text="contract.contract_hash.substring(0, 16) + '...'"></td>
+                                <td class="p-4 font-semibold text-gray-800" x-text="contract.crop_name"></td>
+                                <td class="p-4 text-green-700 font-bold" x-text="'$' + contract.agreed_price"></td>
+                                <td class="p-4 text-gray-700" x-text="'$' + contract.deposit_amount"></td>
+                                <td class="p-4">
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800" x-text="contract.status"></span>
+                                </td>
+                                <td class="p-4">
+                                    <button @click="releaseEscrow(contract)" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">
+                                        Release Funds
+                                    </button>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TAB 4: SYSTEM ARCHITECTURE -->
+        <div x-show="currentTab === 'architecture'" class="space-y-6">
+            <div class="bg-white p-6 rounded-2xl shadow-md border-l-8 border-green-600">
+                <h2 class="text-2xl font-bold text-green-900"><i class="fa-solid fa-server mr-2"></i> System Architecture & Tech Stack</h2>
+                <p class="text-gray-600 mt-1">Hackathon-132 full-stack architecture specification.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-2xl shadow-md space-y-3">
+                    <h3 class="text-lg font-bold text-green-800"><i class="fa-solid fa-laptop-code mr-2"></i> Frontend (HTML/CSS/JS & Alpine.js)</h3>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
+                        <li>Farmer Mobile Portal: Touch-optimized UI, voice-to-text hooks.</li>
+                        <li>Buyer Web Portal: Real-time price charts and instant order creation.</li>
+                        <li>Tailwind CSS for responsive design and Alpine.js for reactivity.</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-md space-y-3">
+                    <h3 class="text-lg font-bold text-green-800"><i class="fa-solid fa-database mr-2"></i> Backend (Node.js & PostgreSQL)</h3>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1 text-sm">
+                        <li>Express.js API Gateway for market prices and escrow.</li>
+                        <li>PostgreSQL relational tables for Users, Listings, and Smart Contracts.</li>
+                        <li>Redis caching layer for sub-10ms rural price tickers.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-12 bg-gray-800 text-gray-300 py-6 text-center text-sm">
+        <p>AgriHack-132 • Strengthening market linkage and price discovery for farmers</p>
+    </footer>
+
+    <!-- Alpine.js Application Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
